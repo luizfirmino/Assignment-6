@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="LUIZ FILHO">
+    <title>Pizza Order</title>
+
+    <!-- CSS -->
+    <link href="bootstrap-3.3.7-dist/bootstrap-3.3.7-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="jumbotron-narrow.css" rel="stylesheet">
+
+    <script src="jquery-3.2.0.min.js" type="text/javascript"></script>
+    <script src="bootstrap-3.3.7-dist/bootstrap-3.3.7-dist/js/bootstrap.js" type="text/javascript"></script>
+    
+    <script type="text/javascript">
+        
+        var pizzaParams = {
+            doughs: ["Hand Tossed","Thin Crust","New York Style","Gluten Free"],
+            sizes: [
+                    ["Hand Tossed",   [["Small ($9.99)"], ["Medium ($12.99)"], ["Large ($14.99)"]]],
+                    ["Thin Crust",    [["Medium ($11.99)"], ["Large ($13.99)"]]],
+                    ["New York Style",[["Large ($16.99)"], ["Extra Large ($19.99)"]]],
+                    ["Gluten Free",   [["Small ($10.99)"]]]],
+            cheeses: ["Light: ($0.00)","Normal ($0.00):","Extra: ($2.99)","Double: ($3.99)"],
+            sauces: ["Regular Tomato: ($0.00)", "Hearty Tomato: ($0.99)", "BBQ Sauce: ($1.99)"]
+            
+        }
+        
+        function checkStep1(){
+            if (validateStep1()){
+                this.addAddress();
+                document.getElementById("lnkStep2").setAttribute("href","#step2");
+                $('#tabs a[href="#step2"]').tab('show');
+            }
+                
+        }
+        
+        
+        function checkStep2(){
+            if (validateStep2()){
+                this.addPizza();
+                document.getElementById("lnkStep3").setAttribute("href","#step3");
+                $('#tabs a[href="#step3"]').tab('show');
+            }
+                
+        }
+        
+        function checkStep3(){
+            if (validateStep3()){
+                this.addBillingAddress();
+                this.addCreditCardInfo();                
+                document.getElementById("lnkStep4").setAttribute("href","#step4");
+                $('#tabs a[href="#step4"]').tab('show');
+            }
+        }
+        
+        function validateStep1(){
+            
+            var requiredFields = ["form-name", "form-phone", "form-email", "form-address-type", "form-address", "form-address-compl", "form-city", "form-state", "form-zipcode"];
+            
+            // STEP 1 - validate required fields
+            for (var field in requiredFields){   
+                if (document.getElementById(requiredFields[field]).value.length == 0) {
+                    $('#' + requiredFields[field]).css("color","red");
+                    return false;
+                }    
+            }
+
+            if (document.getElementById("form-name").value.length < 5) {
+                $('#form-name').css("color","red");
+                return false;
+            }
+            
+            if (!/^[a-zA-Z ]+$/.test(document.getElementById("form-name").value)){
+                $('#form-name').css("color","red");
+                return false;
+            }
+            
+            
+            // Email
+            var emailRegEx = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            if (!emailRegEx.test(document.getElementById("form-email").value)){
+                $('#form-email').css("color","red");
+                return false;
+            }
+            
+            //Other address type
+            if (document.getElementById("form-address-type").value == "other"){
+                if (document.getElementById("form-address-type-other").lenght < 3){
+                    window.alert("Please, inform the other type of address");
+                    return false;
+                }
+            }
+            
+            if (!document.getElementById("form-zipcode").lenght == 5){
+                window.alert("Please, zipcode should have 5 digits");
+                return false;
+            }
+            
+            if (!document.getElementById("form-state").lenght == 2){
+                window.alert("Please, state should have 2 digits");
+                return false;
+            }
+            
+            
+            return true;
+        }
+        
+        
+        
+        function validateStep2(){
+            
+            var doughOK = false;
+            for(var i=0; i < document.getElementsByName("form-dough").length; i++){
+                if (document.getElementsByName("form-dough")[i].checked){
+                    doughOK = true;
+                    break;
+                }
+            }
+            if (!doughOK){
+                window.alert("Please, select one option of dough");
+                return false;
+            }
+            
+            if (document.getElementById("form-dough-size").selectedIndex == 0){
+                window.alert("Please, select the size of your pizza");
+                return false;
+            }
+            
+            if (document.getElementById("form-cheese").selectedIndex == 0){
+                window.alert("Please, select one option of cheese");
+                return false;
+            }
+            
+            if (document.getElementById("form-sauce").selectedIndex == 0){
+                window.alert("Please, select one option of sauce");
+                return false;
+            }
+            
+            return true;
+        }
+        
+
+        function validateStep3(){
+            
+            var requiredFields = ["form-bill-name","form-bill-phone","form-bill-address","form-bill-address-compl","form-bill-city","form-bill-state","form-bill-zipcode","form-bill-card-number","form-bill-card-cvc","form-bill-exp-month","form-bill-exp-year"];
+            
+            // STEP 1 - validate required fields
+            for (var field in requiredFields){
+                if (document.getElementById(requiredFields[field]).value.length == 0) {
+                    window.alert(requiredFields[field] + " is invalid");
+                    return false;
+                }    
+            }
+               
+            // STEP 2 - EXTRA validates
+            if (!validateCreditCardNumber(document.getElementById("form-bill-card-number").value)){
+                window.alert("Credit card number is invalid");
+                return false;
+            }
+            
+            return true;
+            
+        }
+        
+        function validateCreditCardNumber(number) {
+            var regex = new RegExp("^[0-9]{16}$");
+            if (!regex.test(number))
+                return false;
+
+            return luhnCheck(number);
+        }
+
+        function luhnCheck(val) {
+            var sum = 0;
+            for (var i = 0; i < val.length; i++) {
+                var intVal = parseInt(val.substr(i, 1));
+                if (i % 2 == 0) {
+                    intVal *= 2;
+                    if (intVal > 9) {
+                        intVal = 1 + (intVal % 10);
+                    }
+                }
+                sum += intVal;
+            }
+            return (sum % 10) == 0;
+        }
+        
+        
+        function Order(){
+            
+            // Address Properties
+            this._name = "";
+            this._phone = "";
+            this._email = "";
+            this._addressType = "";
+            this._address = "";
+            this._addressCompl = "";
+            this._addressDetails = "";
+            this._city = "";
+            this._state = "";
+            this._zipcode = "";
+            
+            // Pizza Properties
+            this._dough = "";
+            this._size = "";
+            this._cheese = "";
+            this._sauce = "";
+            this._tops = "";
+            
+            // Billing address        
+            this._bName = "";
+            this._bPhone = "";
+            this._bAddress = "";
+            this._bAddressCompl = "";
+            this._bCity = "";
+            this._bState = "";
+            this._bZipcode = "";
+                        
+            //Credit card information
+            this._creditCardNumber = "";
+            this._cvc = "";
+            this._expMonth = "";
+            this._expYear = "";
+            
+            //Price
+            var arrValues = [["size",0],["cheese",0],["sauce",0],["tops",0]];
+            Order.updatePrice = function (i, v){
+                arrValues[i][1] = parseFloat(v);
+            }
+            
+            Order.getPrice = function(){
+                var p = 0;
+                for(var i=0 in arrValues){
+                    p = p + arrValues[i][1];
+                }
+                return p;
+            }
+            
+            this.addAddress = function (){
+                // Address Properties
+                _name =         document.getElementById("form-name").value;
+                _phone =        document.getElementById("form-phone").value;
+                _email =        document.getElementById("form-email").value;
+                _addressType =  document.getElementById("form-address-type").value;
+                _address =      document.getElementById("form-address").value;
+                _addressCompl = document.getElementById("form-address-compl").value;
+                _addressDetails = document.getElementById("form-address-details").value;
+                _city =         document.getElementById("form-city").value;
+                _state =        document.getElementById("form-state").value;
+                _zipcode =      document.getElementById("form-zipcode").value;                
+            }
+            
+            this.addPizza = function(){
+                
+                _dough =    document.getElementsByName("form-dough").value;
+                _size =     document.getElementById("form-dough-size").value;
+                _cheese =   document.getElementById("form-cheese").value;
+                _sauce =    document.getElementById("form-sauce").value;
+                _tops =     document.getElementsByName("form-tops").value;
+                                
+            }
+            
+            this.cloneAddressInfo = function(){
+                document.getElementById("form-bill-name").value = _name;
+                document.getElementById("form-bill-phone").value = _phone;
+                document.getElementById("form-bill-address").value = _address;
+                document.getElementById("form-bill-address-compl").value = _addressCompl;
+                document.getElementById("form-bill-city").value = _city;
+                document.getElementById("form-bill-state").value = _state;
+                document.getElementById("form-bill-zipcode").value = _zipcode;
+
+                document.getElementById("form-bill-name").disabled = true;
+                document.getElementById("form-bill-phone").disabled = true;
+                document.getElementById("form-bill-address").disabled = true;
+                document.getElementById("form-bill-address-compl").disabled = true;
+                document.getElementById("form-bill-city").disabled = true;
+                document.getElementById("form-bill-state").disabled = true;
+                document.getElementById("form-bill-zipcode").disabled = true;
+            }
+            
+            
+            this.addBillingAddress = function(){
+                _name =         document.getElementById("form-bill-name").value;
+                _phone =        document.getElementById("form-bill-phone").value;
+                _address =      document.getElementById("form-bill-address").value;
+                _addressCompl = document.getElementById("form-bill-address-compl").value;
+                _city =         document.getElementById("form-bill-city").value;
+                _state =        document.getElementById("form-bill-state").value;
+                _zipcode =      document.getElementById("form-bill-zipcode").value;
+            }
+            
+            
+            this.addCreditCardInfo = function (){
+                
+                //Credit card information
+                _creditCardNumber = document.getElementById("form-bill-card-number").value;
+                _cvc = document.getElementById("form-bill-card-cvc").value;
+                _expMonth = document.getElementById("form-bill-card-exp-month").value;
+                _expYear = document.getElementById("form-bill-exp-year").value;
+            }
+            
+        }
+        
+        function updatePrice(i,v){
+            var p = v.substring((v.indexOf("$")+1),v.lastIndexOf(")"));
+            Order.updatePrice(i,p);
+            document.getElementById("price").innerHTML = Order.getPrice();
+        }
+        
+        function selectSize(){
+            var i = 0; //size index
+            updatePrice(i,this.value)
+        }
+        
+        function selectCheese(){
+            var i = 1; //cheese index
+            updatePrice(i,this.value);
+        }
+        
+        function selectSauce(){
+            var i = 2; //sauce index
+            updatePrice(i,this.value);
+        }
+        
+        
+        function selectTops(){
+            var i = 3; //Tops index
+            var v = 0;
+            for (var t=0; t < document.getElementsByName("form-tops").length; t++){
+                if (document.getElementsByName("form-tops")[t].checked){
+                    v += 0.99;
+                }
+            }            
+            updatePrice(i,"$" + v + ")");
+        }
+        
+        
+        function copyAddress() {
+            this.cloneAddressInfo();
+        }
+        
+        function fillSauces(){
+            $('#form-sauce').empty();
+            var select = document.getElementById("form-sauce");
+            select.disabled = false;
+            select.addEventListener("change", selectSauce, false);
+            fillDropDownList(select, pizzaParams.sauces)
+        }
+        
+        function fillCheeses(){
+            $('#form-cheese').empty();
+            var select = document.getElementById("form-cheese");
+            select.disabled = false;
+            select.addEventListener("change", fillSauces, false);
+            select.addEventListener("change", selectCheese, false);
+            fillDropDownList(select, pizzaParams.cheeses)
+        }
+        
+        function fillSizes(){
+            
+            $('#form-cheese').empty();
+            $('#form-cheese').append($('<option>', {value:"", text:'Cheese options'}));
+            
+            $('#form-sauce').empty();
+            $('#form-sauce').append($('<option>', {value:"", text:'Sauce options'}));
+            
+            $('#form-dough-size').empty();
+            var select = document.getElementById("form-dough-size");
+            select.disabled = false;
+            select.addEventListener("change", fillCheeses, false);
+            select.addEventListener("change", selectSize, false);
+
+            for(var i in pizzaParams.sizes){    
+                if (pizzaParams.sizes[i][0] == this.value){
+                    fillDropDownList(select, pizzaParams.sizes[i][1])
+                }
+            }
+        }
+        
+        function fillDropDownList(obj, values){
+            
+            var option = document.createElement("option");
+            option.text = "Choose ...";
+            obj.add(option);
+            
+            values.forEach(function (element) {
+                var opt = document.createElement("option");
+                opt.innerHTML = element;
+                obj.appendChild(opt);
+            });
+        }
+        
+        function selectAddressType(){
+            if (this.value == "other"){
+                document.getElementById("form-address-type-other").className = "form-control visible";
+            }else{
+                document.getElementById("form-address-type-other").className = "form-control hidden";
+            }
+        }
+            
+        window.addEventListener("load", init, false);
+        function init() {
+            
+            var newOrder = new Order();
+            
+            $('#tabs a[href="#step1"]').tab('show');
+            document.getElementById("form-address-type").addEventListener("change", selectAddressType, false);
+            document.getElementById("form-btn-step1").addEventListener("click", checkStep1.bind(newOrder), false);
+            document.getElementById("form-btn-step2").addEventListener("click", checkStep2.bind(newOrder), false);
+            document.getElementById("form-btn-step3").addEventListener("click", checkStep3.bind(newOrder), false);
+            
+            document.getElementById("form-dough-hand-tossed").addEventListener("click", fillSizes, false);
+            document.getElementById("form-dough-thin-crust").addEventListener("click", fillSizes, false);
+            document.getElementById("form-dough-new-york").addEventListener("click", fillSizes, false);
+            document.getElementById("form-dough-gluten-free").addEventListener("click", fillSizes, false);
+            
+            
+            document.getElementById("form-bill-same-as-delivery").addEventListener("click", copyAddress.bind(newOrder), false);
+                        
+            document.getElementById("form-tops-pepperoni").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-sausage").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-ham").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-bacon").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-salami").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-peppers").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-olives").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-jalapenos").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-mushrooms").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-pineapple").addEventListener("click", selectTops, false);
+            document.getElementById("form-tops-onion").addEventListener("click", selectTops, false);
+            
+            /*------------- FAKE --------------------------------*/
+            var requiredFields = ["form-name", "form-phone", "form-email", "form-address-type", "form-address", "form-address-compl", "form-city", "form-state", "form-zipcode"];
+            
+            // STEP 1 - validate required fields
+            for (var field in requiredFields){
+                document.getElementById(requiredFields[field]).value = "asasdasdasdasdasdasdasd";
+            }
+            
+            document.getElementById("form-address-type").selectedIndex = 2;
+            document.getElementById("form-zipcode").value = "92109";
+            
+            
+            /*------------- FAKE --------------------------------*/
+           
+            
+            
+            
+        }
+      
+    </script>
+    
+  </head>
+
+  <body>
+      
+      
+      
+
+    <div class="container">
+      <div class="header clearfix">
+        <img src="hoboken-pizza-logo.jpg" class="img-responsive" width="200">
+        <p class="text-right">Your order:$<span id="price">0.00</span></p>
+      </div>
+
+      
+
+      <div class="row marketing">
+        <div class="col-lg-12">
+                  
+             <ul class="nav nav-tabs nav-justified" role="tablist" id="tabs">
+              <li role="presentation"><a href="#step1" role="tab" data-toggle="tab" aria-controls="step1">Where it's going to?</a></li>
+              <li role="presentation" class="disabled"><a role="tab" data-toggle="tab" aria-controls="step2" id="lnkStep2">The Good Stuff</a></li>
+              <li role="presentation" class="disabled"><a role="tab" data-toggle="tab" aria-controls="setp3" id="lnkStep3">The Sad Moment</a></li>
+              <li role="presentation" class="disabled"><a role="tab" data-toggle="tab" aria-controls="step4" id="lnkStep4">Order Details</a></li>
+            </ul>
+            
+            <form method="post" action="order.php">
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane fade in" id="step1">
+                    
+                    <p>&nbsp;</p>                    
+                    <p><input type="text" class="form-control" id="form-name" placeholder="First and Last name"></p>
+                    <p><input type="tel" class="form-control" id="form-phone" placeholder="Phone number"></p>
+                    <p><input type="email" class="form-control" id="form-email" placeholder="Email"></p>
+                    <p>
+                    <select name="form-address-type" id="form-address-type" class="form-control">
+                        <option value="">Address type</option>
+                        <option value="house">House</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="hotel">Hotel</option>
+                        <option value="business">Business</option>
+                        <option value="campus">Campus</option>
+                        <option value="dorm">Dorm</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" class="form-control hidden" id="form-address-type-other">    
+                    </p>
+                    <p><input type="text" class="form-control" id="form-address" placeholder="Address"></p>
+                    <p><input type="text" class="form-control" id="form-address-compl" placeholder="Apartment number, suite, or room number"></p>
+                    <p><textarea class="form-control" rows="2" name="form-address-details" id="form-address-details">Any extra information in order to helper the delivery man?</textarea></p>
+                    <p><input type="text" class="form-control" id="form-city" placeholder="City"></p>
+                    <p><input type="text" class="form-control" id="form-state" placeholder="State" ></p>
+                    <p><input type="number" class="form-control" id="form-zipcode" placeholder="Zipcode"></p>
+                    <p>
+                    <button type="button" class="btn btn-default" id="form-btn-step1">Next Step</button>
+                    </p>
+                </div>
+                <div role="tabpanel" class="tab-pane fade" id="step2">
+                    
+                    <p>&nbsp;</p>
+                    
+                    <h4>Choose the dough</h4>
+                    <p><input type="radio" name="form-dough" value="Hand Tossed" id="form-dough-hand-tossed"> <label for="form-dough-hand-tossed">Hand Tossed</label>
+                    <input type="radio" name="form-dough" value="Thin Crust" id="form-dough-thin-crust"> <label for="form-dough-thin-crust">Thin Crust</label>
+                    <input type="radio" name="form-dough" value="New York Style" id="form-dough-new-york"> <label for="form-dough-new-york">New York Style</label>
+                    <input type="radio" name="form-dough" value="Gluten Free" id="form-dough-gluten-free"> <label for="form-dough-gluten-free">Gluten Free</label>
+                    
+                    </p>
+                    
+                    <p>
+                    <select name="form-dough-size" id="form-dough-size" class="form-control" disabled>
+                        <option value="">Size</option>
+                    </select>
+                    </p>
+                    
+                    <p>
+                    <select name="form-cheese" id="form-cheese" class="form-control" disabled>
+                        <option value="">Cheese options</option>
+                    </select>
+                    </p>
+                    
+                    <p>
+                    <select name="form-sauce" id="form-sauce" class="form-control" disabled>
+                        <option value="">Sauce options</option>
+                    </select>
+                    </p>
+                    
+                    <h4>Extra toppings ($.99 each)</h4>
+                                        
+                    <p><input type="checkbox" name="form-tops" id="form-tops-pepperoni" value="pepperoni"> <label for="form-tops-pepperoni">pepperoni</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-sausage" value="sausage"> <label for="form-tops-sausage">sausage</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-ham" value="ham"> <label for="form-tops-ham">ham</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-bacon" value="bacon"> <label for="form-tops-bacon">bacon</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-salami" value="salami"> <label for="form-tops-salami">salami</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-peppers" value="peppers"> <label for="form-tops-peppers">peppers</label><br>
+                    
+                    <input type="checkbox" name="form-tops" id="form-tops-olives" value="olives"> <label for="form-tops-olives">olives</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-jalapenos" value="jalapenos"> <label for="form-tops-jalapenos">jalapenos</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-mushrooms" value="mushrooms"> <label for="form-tops-mushrooms">mushrooms</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-pineapple" value="pineapple"> <label for="form-tops-pineapple">pineapple</label>
+                    <input type="checkbox" name="form-tops" id="form-tops-onion" value="onion"> <label for="form-tops-onion">onion</label></p>
+                    
+                    <p>
+                    <button type="button" class="btn btn-default" id="form-btn-step2">Finished Building Pizza</button>
+                    </p>
+                    
+                </div>
+                <div role="tabpanel" class="tab-pane fade" id="step3">
+                    
+                    <p>&nbsp;</p>
+                    <p><input type="checkbox" name="form-bill-same-as-delivery" id="form-bill-same-as-delivery"> <label for="form-bill-same-as-delivery">Same as delivery information</label></p></p>
+                    
+                    <p><input type="text" class="form-control" id="form-bill-name" placeholder="Your Name"></p>
+                    <p><input type="phone" class="form-control" id="form-bill-phone" placeholder="Phone number"></p>
+                    <p><input type="text" class="form-control" id="form-bill-address" placeholder="Address"></p>
+                    <p><input type="text" class="form-control" id="form-bill-address-compl" placeholder="Apartment number, suite, or room number"></p>
+                    <p><input type="text" class="form-control" id="form-bill-city" placeholder="City"></p>
+                    <p><input type="text" class="form-control" id="form-bill-state" placeholder="State"></p>
+                    <p><input type="text" class="form-control" id="form-bill-zipcode" placeholder="Zipcode"></p>
+                                    
+                    <p>&nbsp;</p>
+                                        
+                    <p><input type="number" class="form-control" id="form-bill-card-number" maxlength="16" placeholder="Credit Card Number"></p>
+                    <p><input type="number" class="form-control" id="form-bill-card-cvc" placeholder="CVC" maxlength="3"></p>
+                    
+                    <p><select name="form-bill-card-exp-month" id="form-bill-exp-month" class="form-control">
+                        <option value="">Month expiration</option>
+                        <option value="1">January</option>
+                        <option value="2">February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select></p>
+                    
+                    <p><select name="form-bill-exp-year" id="form-bill-exp-year" class="form-control">
+                        <option value="">Year expiration</option>
+                        <option value="2017">2017</option>
+                        <option value="2018">2018</option>
+                        <option value="2019">2019</option>
+                        <option value="2020">2020</option>
+                        <option value="2021">2021</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2025">2025</option>
+                    </select></p>
+                        
+                    <p>
+                    <button type="button" class="btn btn-default" id="form-btn-step3">Place Order</button>
+                    </p>
+                    
+                </div>
+                <div role="tabpanel" class="tab-pane fade" id="step4">
+                    
+                    <fieldset id="fdsDeliveryDetails">
+                        <legend>Delivery Address</legend>
+                    </fieldset>
+                    
+                    <fieldset id="fdsBillingDetails">
+                        <legend>Billing Information</legend>
+                    </fieldset>
+                                        
+                    <fieldset id="fdsPizzaDetails">
+                        <legend>Pizza Details</legend>
+                    </fieldset>
+                    
+                    <p>
+                    <button type="button" class="btn btn-default" id="form-btn-step4">Place Order</button>
+                    </p>
+                </div>
+            </div>
+            </form>
+          
+        </div>
+
+        
+      </div>
+
+      <footer class="footer">
+        <p>&copy; 2017 Filho Corp, Inc.</p>
+      </footer>
+
+    </div> <!-- /container -->
+    
+  </body>
+</html>
